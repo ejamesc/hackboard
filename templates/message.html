@@ -1,0 +1,2 @@
+{% import tornado.escape %}
+<div class="{% if message["feedmessage"] %} feedmessage {% else %} message {% end %}" id="m{{ message["id"] }}"><b>{{ escape(message["from"]) }}: </b>{{ tornado.escape.linkify(message["body"]) }}</div>
