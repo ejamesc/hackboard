@@ -115,11 +115,17 @@ class MessageUpdatesHandler(BaseHandler, MessageMixin):
             return
         self.finish(dict(messages=messages))
 
-  
-class FeedNewHandler(BaseHandler, MessageMixin):
-    # Idea: use callback function for feedparsing, meanwhile just update todolist 
-    def post(self):
-        d = feedparser.parse("%s/commits/master.atom" % self.get_argument("feedurl"))
+
+class FeedLoader(BaseHandler, MessageMixin):
+    @tornado.web.asynchronous
+    def get(self, add):
+        http = tornado.httpclient.AsyncHTTPClient()
+        http.fetch(add,
+                   callback=self.on_response)
+    
+    def on_response(self, response):
+        if response.error: raise tornado.web.HTTPError(500)
+        feed = feedparser.parse(response.body)
         author = d.entries[0].author.encode('utf-8')
         body = d.entries[0].title.encode('utf-8')
         message = {
@@ -129,11 +135,35 @@ class FeedNewHandler(BaseHandler, MessageMixin):
                "feedmessage": True,
            }
         message["html"] = self.render_string("message.html", message=message)
+        self.new_messages([message])
+        self.finish()
+        
+
+class FeedNewHandler(BaseHandler, MessageMixin):
+    # Idea: use callback function for feedparsing, meanwhile just update todolist 
+    @tornado.web.asynchronous
+    def post(self):
+        d = "%s/commits/master.atom" % self.get_argument("feedurl")
+        http = tornado.httpclient.AsyncHTTPClient()
+        http.fetch(d,
+                   callback=self.on_response)
+                     
+    def on_response(self, response):
+        if response.error: raise tornado.web.HTTPError(500)
+        feed = feedparser.parse(response.body)
+        message = {
+                "id": str(uuid.uuid4()),
+                "from": feed.entries[0].author.encode('utf-8'),
+                "body": feed.entries[0].title.encode('utf-8'),
+                "feedmessage": True,
+            }
+        message["html"] = self.render_string("message.html", message=message)
+        self.new_messages([message])
         if self.get_argument("next", None):
             self.redirect(self.get_argument("next"))
         else:
-            self.write(d.feed.title)
-        self.new_messages([message])
+            self.write(feed.feed.title)
+        self.finish()
 
 
 class AuthLoginHandler(BaseHandler, tornado.auth.GoogleMixin):

@@ -28,6 +28,19 @@ $(document).ready(function() {
     });
     $("#message").select();
     updater.poll();
+    
+    $("#feedform").live("submit", function() {
+        newFeed($(this));
+        return false;
+    });
+    $("#feedform").live("keypress", function(e) {
+        if (e.keyCode == 13) {
+            newFeed($(this));
+            return false;
+        }
+    });
+    $("#feedmessage").select();
+    updater.poll();
 });
 
 function newMessage(form) {
@@ -35,6 +48,21 @@ function newMessage(form) {
     var disabled = form.find("input[type=submit]");
     disabled.disable();
     $.postJSON("/a/message/new", message, function(response) {
+        updater.showMessage(response);
+        if (message.id) {
+            form.parent().remove();
+        } else {
+            form.find("input[type=text]").val("").select();
+            disabled.enable();
+        }
+    });
+}
+
+function newFeed(form) {
+    var message = form.formToDict();
+    var disabled = form.find("input[type=submit]");
+    disabled.disable();
+    $.postJSON("/a/feed/new", message, function(response) {
         updater.showMessage(response);
         if (message.id) {
             form.parent().remove();
