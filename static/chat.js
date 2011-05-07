@@ -39,8 +39,6 @@ $(document).ready(function() {
             return false;
         }
     });
-    $("#feedmessage").select();
-    updater.poll();
 });
 
 function newMessage(form) {
@@ -80,12 +78,18 @@ function getCookie(name) {
 
 jQuery.postJSON = function(url, args, callback) {
     args._xsrf = getCookie("_xsrf");
-    $.ajax({url: url, data: $.param(args), dataType: "text", type: "POST",
+    $.ajax({url: url, 
+            data: $.param(args), 
+            dataType: "text", 
+            type: "POST",
             success: function(response) {
-        if (callback) callback(eval("(" + response + ")"));
-    }, error: function(response) {
-        console.log("ERROR:", response)
-    }});
+                console.log(response);
+                if (callback) callback(eval("(" + response + ")"));
+                console.log('pongee');
+            }, 
+            error: function(response) {
+                console.log("ERROR:", response)
+            }});
 };
 
 jQuery.fn.formToDict = function() {
@@ -122,6 +126,7 @@ var updater = {
         $.ajax({url: "/a/message/updates", type: "POST", dataType: "text",
                 data: $.param(args), success: updater.onSuccess,
                 error: updater.onError});
+        console.log('pollactive');
     },
 
     onSuccess: function(response) {

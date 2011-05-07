@@ -93,7 +93,6 @@ class MessageNewHandler(BaseHandler, MessageMixin):
             "feedmessage": False,
         }
         message["html"] = self.render_string("message.html", message=message)
-        #logging.info(message) #log for message object
         if self.get_argument("next", None):
             self.redirect(self.get_argument("next"))
         else:
@@ -135,8 +134,8 @@ class FeedLoader(BaseHandler, MessageMixin):
                "feedmessage": True,
            }
         message["html"] = self.render_string("message.html", message=message)
-        self.new_messages([message])
         self.finish()
+        self.new_messages([message])
         
 
 class FeedNewHandler(BaseHandler, MessageMixin):
@@ -151,10 +150,11 @@ class FeedNewHandler(BaseHandler, MessageMixin):
     def on_response(self, response):
         if response.error: raise tornado.web.HTTPError(500)
         feed = feedparser.parse(response.body)
+        proj = feed.feed.title.encode('utf-8').split()[-1]
         message = {
                 "id": str(uuid.uuid4()),
                 "from": feed.entries[0].author.encode('utf-8'),
-                "body": feed.entries[0].title.encode('utf-8'),
+                "body": feed.entries[0].title.encode('utf-8') + " in " + proj,
                 "feedmessage": True,
             }
         message["html"] = self.render_string("message.html", message=message)
