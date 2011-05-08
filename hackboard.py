@@ -115,29 +115,6 @@ class MessageUpdatesHandler(BaseHandler, MessageMixin):
         self.finish(dict(messages=messages))
 
 
-class FeedLoader(BaseHandler, MessageMixin):
-    @tornado.web.asynchronous
-    def get(self, add):
-        http = tornado.httpclient.AsyncHTTPClient()
-        http.fetch(add,
-                   callback=self.on_response)
-    
-    def on_response(self, response):
-        if response.error: raise tornado.web.HTTPError(500)
-        feed = feedparser.parse(response.body)
-        author = d.entries[0].author.encode('utf-8')
-        body = d.entries[0].title.encode('utf-8')
-        message = {
-               "id": str(uuid.uuid4()),
-               "from": author,
-               "body": body,
-               "feedmessage": True,
-           }
-        message["html"] = self.render_string("message.html", message=message)
-        self.finish()
-        self.new_messages([message])
-        
-
 class FeedNewHandler(BaseHandler, MessageMixin):
     # Idea: use callback function for feedparsing, meanwhile just update todolist 
     @tornado.web.asynchronous
@@ -162,7 +139,7 @@ class FeedNewHandler(BaseHandler, MessageMixin):
         if self.get_argument("next", None):
             self.redirect(self.get_argument("next"))
         else:
-            self.write(feed.feed.title)
+            self.write(message)
         self.finish()
 
 

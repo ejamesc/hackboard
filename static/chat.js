@@ -83,9 +83,7 @@ jQuery.postJSON = function(url, args, callback) {
             dataType: "text", 
             type: "POST",
             success: function(response) {
-                console.log(response);
                 if (callback) callback(eval("(" + response + ")"));
-                console.log('pongee');
             }, 
             error: function(response) {
                 console.log("ERROR:", response)
@@ -126,7 +124,6 @@ var updater = {
         $.ajax({url: "/a/message/updates", type: "POST", dataType: "text",
                 data: $.param(args), success: updater.onSuccess,
                 error: updater.onError});
-        console.log('pollactive');
     },
 
     onSuccess: function(response) {
