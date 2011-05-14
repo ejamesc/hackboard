@@ -1,17 +1,3 @@
-// Copyright 2009 FriendFeed
-//
-// Licensed under the Apache License, Version 2.0 (the "License"); you may
-// not use this file except in compliance with the License. You may obtain
-// a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
-// WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-// License for the specific language governing permissions and limitations
-// under the License.
-
 $(document).ready(function() {
     if (!window.console) window.console = {};
     if (!window.console.log) window.console.log = function() {};
@@ -61,7 +47,7 @@ function newFeed(form) {
     var disabled = form.find("input[type=submit]");
     disabled.disable();
     $.postJSON("/a/feed/new", message, function(response) {
-        updater.showMessage(response);
+        updater.showProject(response);
         if (message.id) {
             form.parent().remove();
         } else {
@@ -127,6 +113,8 @@ var updater = {
     },
 
     onSuccess: function(response) {
+        console.log('success ' + response);
+        console.log(response["messages"]);
         try {
             updater.newMessages(eval("(" + response + ")"));
         } catch (e) {
@@ -161,5 +149,14 @@ var updater = {
         node.hide();
         $("#inbox").append(node);
         node.slideDown();
-    }
+    },
+    
+    showProject: function(message) {
+        var existing = $("#p" + message.id);
+        if (existing.length > 0) return;
+        var node = $(message.html);
+        node.hide();
+        $("#projectlist").append(node);
+        node.slideDown();
+    },
 };

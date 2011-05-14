@@ -12,11 +12,17 @@
     </div>
 	<div id="projects">
 		<form action="/a/feed/new" method="post" id="feedform">
+			<input name="proj" id="proj" style="width:500px"/>
 			<input name="feedurl" id="feedurl" style="width:500px"/>
 			<input type="submit" value="{{ _("Post") }}"/>
             <input type="hidden" name="next" value="{{ request.path }}"/>
             {{ xsrf_form_html() }}
 		</form>
+		<div id="projectlist">
+			{% for project in projects %}
+	          {% include "project.html" %}
+	        {% end %}
+		</div>
 	</div>
     <div id="body">
       <div id="inbox">

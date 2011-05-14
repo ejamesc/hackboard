@@ -45,6 +45,14 @@ td {
     background: #333;
 }
 
+#projectlist {
+    background: #eee;
+}
+
+.project {
+    background: #eee;
+}
+
 #body {
   position: absolute;
   bottom: 10px;

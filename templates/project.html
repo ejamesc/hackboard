@@ -1,0 +1,5 @@
+{% import tornado.escape %}
+<div class="project" id="p{{ project["id"] }}">
+	<big>{{ escape(project["name"]) }}</big>
+	<br/>{{ tornado.escape.linkify(project["giturl"]) }}
+</div>

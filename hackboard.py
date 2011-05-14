@@ -48,7 +48,7 @@ class BaseHandler(tornado.web.RequestHandler):
 class MainHandler(BaseHandler):
     @tornado.web.authenticated
     def get(self):
-        self.render("index.html", messages=MessageMixin.cache)
+        self.render("index.html", messages=MessageMixin.cache, projects=ProjectMixin.cache)
 
 
 class MessageMixin(object):
@@ -115,15 +115,90 @@ class MessageUpdatesHandler(BaseHandler, MessageMixin):
         self.finish(dict(messages=messages))
 
 
-class FeedNewHandler(BaseHandler, MessageMixin):
+class ProjectMixin(object):
+    waiters = []
+    cache = []
+    
+    def wait_for_projupdates(self, callback, cursor=None):
+        cls = ProjectMixin
+        if cursor:
+            index = 0
+            for i in xrange(len(cls.cache)):
+                index = len(cls.cache) - i - 1
+                if cls.cache[index]["id"] == cursor: break
+            recent = cls.cache[index + 1:]
+            if recent:
+                callback(recent)
+                return
+        cls.waiters.append(callback)
+    
+    def new_project(self, project):
+        cls = ProjectMixin
+        logging.info("Creating new project, send to %r listeners", len(cls.waiters))
+        for callback in cls.waiters:
+            try:
+                callback(project)
+            except:
+                logging.error("Error in waiter callback", exc_info=True)
+        cls.waiters = []
+        cls.cache.extend(project)
+
+       
+"""class FeedUpdateHandler(BaseHandler, ProjectMixin):
+    @tornado.web.asynchronous
+    def post(self):
+        cursor = self.get_argument("cursor", None)
+        self.wait_for_projupdates(self.async_callback(self.on_new_updates),
+                               cursor=cursor)
+
+    def on_new_updates(self, projects):
+        # Closed client connection
+        if self.request.connection.stream.closed():
+            return
+        self.finish(dict(projects=projects))
+    #def post(self):
+        #return"""
+
+
+class FeedUpdater(object):
+    updatelist = []
+    
+    def add_feed(self, feedurl):
+        if feedurl in updatelist:
+            return
+        else:
+           updatelist.append("%s/commits/master.atom" % feedurl)
+
+    #not bloody done
+
+class FeedNewHandler(BaseHandler, ProjectMixin):
+    # Idea: use callback function for feedparsing, meanwhile just update todolist 
+    def post(self):
+        feedurl = self.get_argument("feedurl")
+        
+        project = {
+                "id": str(uuid.uuid4()),
+                "name": self.get_argument("proj"),
+                "giturl": feedurl,
+            }
+        project["html"] = self.render_string("project.html", project=project)
+        if self.get_argument("next", None):
+            self.redirect(self.get_argument("next"))
+        else:
+            self.write(project)
+        self.new_project([project])
+
+
+"""class FeedNewHandler(BaseHandler, MessageMixin, ProjectMixin):
     # Idea: use callback function for feedparsing, meanwhile just update todolist 
     @tornado.web.asynchronous
     def post(self):
-        d = "%s/commits/master.atom" % self.get_argument("feedurl")
+        feedurl = self.get_argument("feedurl")
+        d = "%s/commits/master.atom" % feedurl
         http = tornado.httpclient.AsyncHTTPClient()
-        http.fetch(d,
-                   callback=self.on_response)
-                     
+        http.fetch(d, 
+                callback=self.on_response)
+
     def on_response(self, response):
         if response.error: raise tornado.web.HTTPError(500)
         feed = feedparser.parse(response.body)
@@ -140,7 +215,7 @@ class FeedNewHandler(BaseHandler, MessageMixin):
             self.redirect(self.get_argument("next"))
         else:
             self.write(message)
-        self.finish()
+        self.finish()"""
 
 
 class AuthLoginHandler(BaseHandler, tornado.auth.GoogleMixin):
